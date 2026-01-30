@@ -50,9 +50,10 @@ export default function Login() {
 
        
         <div className="text-left mb-6">
-          <a href="#" className="text-sm text-gray-500 underline">
-            هل نسيت كلمة المرور؟
-          </a>
+          <Link to="/forgotPassword" className="text-sm text-gray-500 underline" >
+             هل نسيت كلمة المرور؟
+          </Link>
+         
         </div>
      
         <button className="w-full bg-blue-900 text-white py-3 rounded-lg font-medium hover:bg-blue-800 transition">
