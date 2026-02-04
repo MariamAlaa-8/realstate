@@ -18,6 +18,7 @@ import Verification from './Pages/Verification'
 import RealEstate from './Pages/RealEstate'
 import PaymentPage from './Pages/PaymentPage'
 import ForgotPassword from './Pages/ForgotPassword'
+import InformationPersonal from './Pages/InformationPersonal'
 
 
 const router = createBrowserRouter([
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
            { path: 'realEstate', element: <RealEstate/>},
             { path: 'paymentPage', element: <PaymentPage/>},
        { path: 'forgotPassword', element: <ForgotPassword/>},
+      { path: 'informationPersonal', element: <InformationPersonal/>},
 
     ]
   },
