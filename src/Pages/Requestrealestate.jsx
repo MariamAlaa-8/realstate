@@ -18,16 +18,16 @@ export default function Requestrealestate() {
 
        
           <div>
-            <label className="block text-sm text-gray-600 mb-1">الاسم</label>
+            <label className="block text-lg mb-1">الاسم</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">الرقم القومي</label>
+            <label className="block text-lg mb-1">الرقم القومي</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
+            <label className="block text-lg  mb-1">
               رقم عداد (الكهرباء)
             </label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
@@ -35,35 +35,35 @@ export default function Requestrealestate() {
 
           
           <div>
-            <label className="block text-sm text-gray-600 mb-1">رقم الهاتف</label>
+            <label className="block text-lg mb-1">رقم الهاتف</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
+            <label className="block text-lg  mb-1">
               نسبة الملكية (%)
             </label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">رقم العقار</label>
+            <label className="block text-lg  mb-1">رقم العقار</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
          
           <div>
-            <label className="block text-sm text-gray-600 mb-1">العنوان</label>
+            <label className="block text-lg  mb-1">العنوان</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">المحافظة</label>
+            <label className="block text-lg  mb-1">المحافظة</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">نوع العقار</label>
+            <label className="block text-lg  mb-1">نوع العقار</label>
             <select className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800 text-gray-500">
               <option>اختر نوع العقار</option>
               <option>شقة</option>
@@ -74,17 +74,17 @@ export default function Requestrealestate() {
 
          
           <div>
-            <label className="block text-sm text-gray-600 mb-1">رقم الطابق</label>
+            <label className="block text-lg  mb-1">رقم الطابق</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">المساحة (م²)</label>
+            <label className="block text-lg  mb-1">المساحة (م²)</label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
+            <label className="block text-lg  mb-1">
               السعر المتوقع (جنيه)
             </label>
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
@@ -92,7 +92,7 @@ export default function Requestrealestate() {
 
           
           <div>
-            <label className="block text-sm text-gray-600 mb-1">صورة العقد</label>
+            <label className="block text-lg mb-1">صورة العقد</label>
             <input type="file" className="w-full border rounded-lg py-2 px-3 text-sm bg-white"/>
           </div>
         </div>
