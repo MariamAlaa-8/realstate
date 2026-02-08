@@ -141,10 +141,11 @@ export default function Requestrealestate() {
             <input className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800" />
           </div>
 
-          <div>
+         <div>
             <label className="block text-lg mb-1">صورة العقد</label>
-            <input type="file" className="w-full border rounded-lg py-2 px-3 text-sm bg-white" />
+            <input type="file" className="w-full border rounded-lg py-3 px-3 outline-none bg-white" />
           </div>
+
 
         </div>
 
