@@ -88,11 +88,7 @@ export default function Requestrealestate() {
 
           <div>
             <label className="block text-lg mb-1">نوع العقار</label>
-            <select
-              value={propertyType}
-              onChange={(e) => setPropertyType(e.target.value)}
-              className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800 text-gray-900"
-            >
+            <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800 text-gray-900"  >
               <option value="">اختر نوع العقار</option>
 
               <optgroup label="سكني">
