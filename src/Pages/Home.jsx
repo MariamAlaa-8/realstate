@@ -55,48 +55,53 @@ export default function Home() {
           كيف يعمل النظام؟
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
-          {[
-            {
-              step: "1",
-              title: "سجل حسابك",
-              desc: "أنشئ حسابًا جديدًا باستخدام الرقم القومي مع التحقق برمز OTP",
-            },
-            {
-              step: "2",
-              title: "أضف عقارك",
-              desc: "سجل بيانات العقار وارفع المستندات المطلوبة",
-            },
-            {
-              step: "3",
-              title: "استلم الكارت",
-              desc: "بعد المراجعة يتم إصدار الكارت الذكي الخاص بك",
-            },
-            {
-              step: "4",
-              title: "بحث",
-              desc: "يمكنك البحث العقار قبل الشراء للتاكد من صحة البيانات والمالك",
-            },
-            {
-              step: "5",
-              title: "الوصية",
-              desc: "يمكنك اضافة الوصية الرسمية الخاصة بالعقار",
-            },
-          ].map((item) => (
-            <div
-              key={item.step}
-              className="block p-6 rounded-lg no-underline text-gray-900 bg-white shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-700 text-white flex items-center justify-center text-xl">
-                {item.step}
-              </div>
-              <h3 className="font-bold mb-2 text-lg">{item.title}</h3>
-              <p className="text-base text-gray-600 leading-relaxed">
-                {item.desc}
-              </p>
-            </div>
-          ))}
-        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+  {[
+    {
+      step: "1",
+      title: "سجل حسابك",
+      desc: "أنشئ حسابًا جديدًا باستخدام الرقم القومي مع التحقق برمز OTP",
+    },
+    {
+      step: "2",
+      title: "أضف عقارك",
+      desc: "سجل بيانات العقار وارفع المستندات المطلوبة",
+    },
+    {
+      step: "3",
+      title: "استلم الكارت",
+      desc: "بعد المراجعة يتم إصدار الكارت الذكي الخاص بك",
+    },
+    {
+      step: "4",
+      title: "بحث",
+      desc: "يمكنك البحث عن العقار قبل الشراء للتأكد من صحة البيانات والمالك",
+    },
+    {
+      step: "5",
+      title: "المعاملات",
+      desc: "يمكنك تنفيذ جميع معاملات البيع والشراء الخاصة بالعقار بأمان وسهولة",
+    },
+    {
+      step: "6",
+      title: "المواريث",
+      desc: "يمكنك إضافة بيانات الوراثة الرسمية الخاصة بالعقار وتحديثها عند الحاجة",
+    },
+  ].map((item) => (
+    <div
+      key={item.step}
+      className="p-6 text-gray-900 transition"
+    >
+      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-700 text-white flex items-center justify-center text-xl">
+        {item.step}
+      </div>
+      <h3 className="font-bold mb-2 text-lg">{item.title}</h3>
+      <p className="text-base text-gray-600 leading-relaxed">
+        {item.desc}
+      </p>
+    </div>
+  ))}
+</div>
       </section>
     </div>
   )
