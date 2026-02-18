@@ -2,14 +2,13 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  },
   timeout: 10000,
+  headers: {
+    'Accept': 'application/json', 
+  }
 });
 
-// Interceptor لإضافة التوكن تلقائياً
+
 API.interceptors.request.use((config) => {
   console.log(`📤 Request: ${config.method?.toUpperCase()} ${config.url}`);
   const token = localStorage.getItem('token');
@@ -19,7 +18,6 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor للتعامل مع الأخطاء العامة
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -28,8 +26,6 @@ API.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
-      // إعادة تحميل الصفحة للعودة إلى صفحة تسجيل الدخول
       window.location.href = '/login';
     }
     
