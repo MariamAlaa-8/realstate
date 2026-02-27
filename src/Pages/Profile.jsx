@@ -224,9 +224,21 @@ export default function Profile() {
 
           <div className="bg-white rounded-lg shadow-sm p-4 text-sm space-y-3">
             <p className="font-bold mb-2 text-sm sm:text-base">إعدادات الحساب</p>
-            <p className="text-gray-600 text-sm sm:text-base cursor-pointer">عقارات</p>
-            <p className="text-gray-600 text-sm sm:text-base cursor-pointer">معاملات</p>
-            <p className="text-gray-600 text-sm sm:text-base cursor-pointer">إشعارات</p>
+            <p 
+              className="text-gray-600 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition"
+              onClick={() => navigate('/realEstate')} >
+            عقاراتي
+            </p>
+            <p 
+              className="text-gray-600 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition"
+              onClick={() => navigate('/transactions')} >
+            معاملات
+            </p>
+            <p 
+              className="text-gray-600 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition"
+              onClick={() => navigate('/notifications')} >
+            إشعارات
+            </p>
             <p className="text-red-500 text-sm sm:text-base cursor-pointer">مساعدة</p>
             <p 
               className="text-gray-600 text-sm sm:text-base cursor-pointer hover:text-red-500"
