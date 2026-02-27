@@ -23,6 +23,9 @@ export default function Verification() {
   
   const inputsRef = useRef([])
 
+  const ADMIN_PHONE = '01000000000'
+  const ADMIN_PASSWORD = 'admin123'
+
   useEffect(() => {
     if (!userId || !phoneNumber) {
       navigate('/login', { replace: true })
@@ -153,12 +156,21 @@ export default function Verification() {
         otp: otpCode
       })
 
-      login(response.data.user, response.data.token) ///save data in local , context
+      const userData = response.data.user
+      const token = response.data.token
+
+      login(userData, token)
 
       setSuccess('تم التحقق بنجاح! يتم توجيهك الآن...')
 
       setTimeout(() => {
-        navigate('/')  
+        if (phoneNumber === ADMIN_PHONE || userData.phoneNumber === ADMIN_PHONE) {
+          console.log('Admin logged in - redirecting to dashboard')
+          navigate('/admin/dashboard')
+        } else {
+          console.log('👤 User logged in - redirecting to profile')
+          navigate('/')
+        }
       }, 1500)
 
     } catch (error) {
@@ -228,6 +240,12 @@ export default function Verification() {
             {maskedPhoneNumber}
           </span>
         </p>
+
+        {phoneNumber === ADMIN_PHONE && (
+          <div className="mb-4 p-2 bg-purple-100 border border-purple-300 text-purple-700 rounded-lg text-center">
+            <span className="font-bold"> تسجيل دخول كأدمن</span>
+          </div>
+        )}
 
         {showOtpChip && storedOtp && (
           <div className="mb-6">
@@ -329,15 +347,15 @@ export default function Verification() {
           onClick={handleVerify}
           disabled={loading || otp.join('').length !== 6}
           className={`w-full ${
-            loading ? 'bg-blue-700' : 'bg-blue-900'
-          } text-white py-3 rounded-lg font-medium hover:bg-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+            phoneNumber === ADMIN_PHONE ? 'bg-purple-900 hover:bg-purple-800' : 'bg-blue-900 hover:bg-blue-800'
+          } text-white py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
         >
           {loading ? (
             <>
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               جاري التحقق...
             </>
-          ) : 'تأكيد'}
+          ) : phoneNumber === ADMIN_PHONE ? 'تأكيد دخول الأدمن' : 'تأكيد'}
         </button>
 
         <div className="text-center mt-6">
