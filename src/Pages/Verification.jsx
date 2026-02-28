@@ -169,7 +169,7 @@ export default function Verification() {
           navigate('/admin/dashboard')
         } else {
           console.log('👤 User logged in - redirecting to profile')
-          navigate('/')
+          navigate('/services')
         }
       }, 1500)
 
