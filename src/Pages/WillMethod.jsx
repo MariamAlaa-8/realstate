@@ -9,7 +9,7 @@ export default function WillMethod() {
 
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow">
 
-        {/* Header */}
+     
         <div className="bg-blue-900 text-white text-center p-5 rounded-t-xl">
           <h2 className="text-xl font-bold">إعداد الميراث</h2>
           <p className="mt-1">
@@ -17,7 +17,7 @@ export default function WillMethod() {
           </p>
         </div>
 
-        {/* معلومات العقار */}
+       
         <div className="p-5 border-b bg-gray-50">
           <h3 className="font-semibold mb-3">معلومات العقار</h3>
 
@@ -28,7 +28,7 @@ export default function WillMethod() {
           </p>
         </div>
 
-        {/* اختيار الطريقة */}
+     
         <div className="p-6">
 
           <h3 className="font-semibold mb-4 text-lg">
@@ -37,7 +37,7 @@ export default function WillMethod() {
 
           <div className="grid md:grid-cols-2 gap-6">
 
-            {/* حسب الشريعة */}
+       
             <div
               onClick={() => navigate("/optionalWill")}
               className="cursor-pointer border rounded-xl p-6 text-center hover:shadow-lg transition hover:border-blue-600"
@@ -51,7 +51,7 @@ export default function WillMethod() {
               </p>
             </div>
 
-            {/* توزيع يدوي */}
+           
             <div
               onClick={() => navigate("/willSetup")}
               className="cursor-pointer border rounded-xl p-6 text-center hover:shadow-lg transition hover:border-blue-600"
@@ -71,4 +71,5 @@ export default function WillMethod() {
       </div>
     </div>
   );
+
 }
