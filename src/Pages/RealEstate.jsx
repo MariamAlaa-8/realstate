@@ -271,72 +271,50 @@
                         </div>
                         )}
                     </div>
+<div className="mt-4 flex gap-2 flex-wrap">
+  
+  {contract.status === 'approved' && (
+    <button
+      onClick={() => handleListForSale(contract._id, contract.price)}
+      disabled={listingLoading}
+      className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50"
+    >
+      عرض للبيع
+    </button>
+  )}
 
-                    <div className="mt-4 flex gap-2">
-                        {contract.status === 'approved' && (
-                        <button
-                            onClick={() => handleListForSale(contract._id, contract.price)}
-                            disabled={listingLoading}
-                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50"
-                        >
-                            عرض للبيع
-                        </button>
-                        )}
+  {contract.status === 'for_sale' && (
+    <button
+      onClick={() => handleStartSale(contract)}
+      className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+    >
+      بدء عملية البيع
+    </button>
+  )}
 
-                        {contract.status === 'for_sale' && (
-                        <button
-                            onClick={() => handleStartSale(contract)}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm"
-                        >
-                            بدء عملية البيع
-                        </button>
-                        )}
+  {contract.status === 'completed' && (
+    <>
+      <div className="flex-1 text-center text-indigo-600 font-medium text-sm py-2">
+        ✅ تم الشراء
+      </div>
+      <button
+        onClick={() => handleListForSale(contract._id, contract.price)}
+        disabled={listingLoading}
+        className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50"
+      >
+        عرض للبيع
+      </button>
+    </>
+  )}
 
-                        {contract.status === 'sold' && (
-                        <div className="flex-1 text-center text-purple-600 font-medium text-sm py-2">
-                            تم بيع هذا العقار
-                        </div>
-                        )}
-
-                        {contract.status === 'completed' && (
-                        <>
-                            <div className="flex-1 text-center text-indigo-600 font-medium text-sm py-2">
-                            ✅ تم الشراء
-                            </div>
-                           
-                        </>
-                        )}
-
-                        {contract.status === 'pending' && (
-                        <div className="flex-1 text-center text-yellow-600 font-medium text-sm py-2">
-                            في انتظار مراجعة الأدمن
-                        </div>
-                        )}
-
-                        {contract.status === 'sale_pending' && (
-                        <>
-                            <div className="flex-1 text-center text-orange-600 font-medium text-sm py-2">
-                            في انتظار الدفع
-                            </div>
-                            <button
-                            onClick={() => handleCancelPayment(contract._id)}
-                            disabled={cancelLoading}
-                            className="px-4 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition text-sm disabled:opacity-50"
-                            >
-                            {cancelLoading ? 'جاري...' : 'إلغاء'}
-                            </button>
-                        </>
-                        )}
-
-                        {contract.imageUrl && (
-                        <button 
-                            onClick={() => window.open(contract.imageUrl, '_blank')}
-                            className="px-4 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition text-sm"
-                        >
-                            📎 الصورة
-                        </button>
-                        )}
-                    </div>
+  
+  <button
+    onClick={() => navigate("/will-method")}
+    className="flex-1 bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition text-sm"
+  >
+    إضافة وصية
+  </button>
+</div>
                     </div>
 
                     {index < filteredContracts.length - 1 && (
@@ -346,6 +324,7 @@
                 ))}
             </>
             )}
+            
 
             <div className="text-center mt-4">
             <Link 
@@ -355,6 +334,8 @@
                 + إضافة عقار جديد
             </Link>
             </div>
+            
+            
         </div>
         </div>
     );
