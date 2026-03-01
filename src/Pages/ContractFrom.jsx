@@ -96,8 +96,8 @@ export default function ContractForm() {
           return;
         }
 
-        if (contract.status !== 'approved') {
-          setError('العقد غير متاح للبيع. يجب أن يكون بحالة مقبول أولاً');
+       if (contract.status !== 'approved' && contract.status !== 'completed') {
+          setError('العقد غير متاح للبيع. ');
           setCheckingContract(false);
           return;
         }
