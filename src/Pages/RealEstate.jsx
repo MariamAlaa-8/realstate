@@ -329,12 +329,15 @@
     + إضافة عقار جديد
   </Link>
 
-  <Link 
-    to="/Willmethod" 
-    className="inline-block w-full max-w-xs bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition text-sm"
-  >
-    + إضافة وصية
-  </Link>
+
+  {(filter === 'approved' || filter === 'completed') && (
+    <Link 
+      to="/Willmethod" 
+      className="inline-block w-full max-w-xs bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition text-sm"
+    >
+      + إضافة وصية
+    </Link>
+  )}
 
 </div>
             
