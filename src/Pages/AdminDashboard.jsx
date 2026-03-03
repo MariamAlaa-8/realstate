@@ -1,14 +1,16 @@
-    import React, { useState, useEffect } from 'react';
-    import { useNavigate } from 'react-router-dom';
+    import React, { useState, useEffect, useCallback, useMemo } from 'react';
+    import { useNavigate, useLocation } from 'react-router-dom'; 
     import API from '../api';
 
     export default function AdminDashboard() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [stats, setStats] = useState(null);
     const [pendingContracts, setPendingContracts] = useState([]);
     const [recentContracts, setRecentContracts] = useState([]);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [initialLoad, setInitialLoad] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -16,140 +18,271 @@
     const [rejectionReason, setRejectionReason] = useState('');
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showContractModal, setShowContractModal] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [statusLoading, setStatusLoading] = useState(false);
+    const CACHE_KEY = 'admin_dashboard_cache';
+    const CACHE_DURATION = 5 * 60 * 1000;
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
-        try {
+    const fetchDashboardData = useCallback(async (forceRefresh = false) => {
+    try {
         setLoading(true);
+        
+        if (!forceRefresh && !initialLoad) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+            console.log('📦 Using cached data');
+            setStats(data.statistics);
+            setPendingContracts(data.pendingContracts || []);
+            setRecentContracts(data.recentContracts || []);
+            setUsers(data.users || []);
+            setLoading(false);
+            setInitialLoad(false);
+            return;
+            }
+        }
+        }
+        
         const response = await API.get('/admin/dashboard');
         console.log('Dashboard data:', response.data);
+        
+        // Cache the data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: response.data,
+        timestamp: Date.now()
+        }));
         
         setStats(response.data.statistics);
         setPendingContracts(response.data.pendingContracts || []);
         setRecentContracts(response.data.recentContracts || []);
         setUsers(response.data.users || []);
-        } catch (err) {
+    } catch (err) {
         console.error('Error fetching dashboard:', err);
         setError('حدث خطأ في تحميل البيانات');
         if (err.response?.status === 403) {
-            navigate('/login');
+        navigate('/login');
         }
-        } finally {
+    } finally {
         setLoading(false);
+        setInitialLoad(false);
+    }
+    }, [navigate, initialLoad]);
+
+    useEffect(() => {
+    fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    useEffect(() => {
+    if (location.state?.selectedContractId && location.state?.openContractModal) {
+        const contractId = location.state.selectedContractId;
+        
+        let foundContract = pendingContracts.find(c => c._id === contractId);
+        
+        if (!foundContract) {
+        foundContract = recentContracts.find(c => c._id === contractId);
         }
-    };
+        
+        if (foundContract) {
+        setSelectedContract(foundContract);
+        setShowContractModal(true);
+        
+        window.history.replaceState({}, document.title);
+        }
+    }
+    }, [location.state, pendingContracts, recentContracts]);
+
+    // Memoized values for better performance
+    const statsCards = useMemo(() => {
+    if (!stats) return [];
+    return [
+        { icon: '📄', color: 'blue', label: 'إجمالي العقود', value: stats.totalContracts },
+        { icon: '⏳', color: 'yellow', label: 'قيد المراجعة', value: stats.pendingContracts },
+        { icon: '✅', color: 'green', label: 'مقبولة', value: stats.approvedContracts },
+        { icon: '❌', color: 'red', label: 'مرفوضة', value: stats.rejectedContracts }
+    ];
+    }, [stats]);
+
+    const userStatsCards = useMemo(() => {
+    if (!stats) return [];
+    return [
+        { icon: '👥', color: 'purple', label: 'إجمالي المستخدمين', value: stats.totalUsers },
+        { icon: '✅', color: 'green', label: 'المستخدمين النشطين', value: stats.activeUsers, percentage: stats.activePercentage },
+        { icon: '⚠️', color: 'yellow', label: 'المستخدمين الغير نشطين', value: stats.inactiveUsers, percentage: stats.inactivePercentage }
+    ];
+    }, [stats]);
 
     const handleAcceptContract = async (contractId) => {
-        try {
-        const response = await API.put(`/admin/contracts/${contractId}/accept`, {
-            notes: 'تم الموافقة على العقد'
+    try {
+        await API.put(`/admin/contracts/${contractId}/accept`, {
+        notes: 'تم الموافقة على العقد'
         });
         
         setSuccessMessage(`✅ تم قبول العقد بنجاح`);
-        fetchDashboardData();  
+        fetchDashboardData(true); 
         
         setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err) {
+    } catch (err) {
         console.error('Error accepting contract:', err);
         setError('حدث خطأ في قبول العقد');
-        }
+    }
     };
 
     const handleRejectContract = async () => {
-        if (!rejectionReason.trim()) {
+    if (!rejectionReason.trim()) {
         setError('يرجى إدخال سبب الرفض');
         return;
-        }
+    }
 
-        try {
-        const response = await API.put(`/admin/contracts/${selectedContract._id}/reject`, {
-            reason: rejectionReason
+    try {
+        await API.put(`/admin/contracts/${selectedContract._id}/reject`, {
+        reason: rejectionReason
         });
         
         setSuccessMessage(`✅ تم رفض العقد بنجاح`);
         setShowRejectModal(false);
         setSelectedContract(null);
         setRejectionReason('');
-        fetchDashboardData(); 
+        fetchDashboardData(true);
         
         setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err) {
+    } catch (err) {
         console.error('Error rejecting contract:', err);
         setError('حدث خطأ في رفض العقد');
-        }
+    }
     };
 
     const handleDeleteInactiveUsers = async () => {
-        if (!window.confirm('هل أنت متأكد من حذف المستخدمين الغير نشطين (أكثر من 30 يوم)؟')) {
+    if (!window.confirm('هل أنت متأكد من حذف المستخدمين الغير نشطين (أكثر من 30 يوم)؟')) {
         return;
-        }
+    }
 
-        try {
+    try {
         const response = await API.delete('/admin/delete-inactive-users');
         setSuccessMessage(`✅ تم حذف ${response.data.deletedCount} مستخدم غير نشط`);
-        fetchDashboardData(); 
+        fetchDashboardData(true);
         
         setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err) {
+    } catch (err) {
         console.error('Error deleting inactive users:', err);
         setError('حدث خطأ في حذف المستخدمين');
-        }
+    }
     };
 
     const handleDeleteUser = async (userId, userName) => {
-        if (!window.confirm(`هل أنت متأكد من حذف المستخدم ${userName} وجميع عقوده؟`)) {
+    if (!window.confirm(`هل أنت متأكد من حذف المستخدم ${userName} وجميع عقوده؟`)) {
         return;
-        }
+    }
 
-        try {
+    try {
         await API.delete(`/admin/user/${userId}`);
         setSuccessMessage(`✅ تم حذف المستخدم بنجاح`);
-        fetchDashboardData(); 
+        fetchDashboardData(true);
         
         setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err) {
+    } catch (err) {
         console.error('Error deleting user:', err);
         setError('حدث خطأ في حذف المستخدم');
-        }
+    }
+    };
+
+    const handleToggleUserStatus = async (userId, currentStatus) => {
+    setStatusLoading(true);
+    try {
+        const newStatus = !currentStatus;
+        await API.put(`/admin/user/${userId}/status`, { isALive: newStatus });
+        
+        setSuccessMessage(`✅ تم تغيير حالة المستخدم إلى ${newStatus ? 'نشط' : 'غير نشط'}`);
+        fetchDashboardData(true);
+        
+        setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+        console.error('Error toggling user status:', err);
+        setError('حدث خطأ في تغيير حالة المستخدم');
+    } finally {
+        setStatusLoading(false);
+    }
     };
 
     const handleViewContract = (contract) => {
-        setSelectedContract(contract);
-        setShowContractModal(true);
+    setSelectedContract(contract);
+    setShowContractModal(true);
+    };
+
+    const handleViewImage = (contractImage) => {
+    setSelectedImage(contractImage);
+    setShowImageModal(true);
     };
 
     const handleShowRejectModal = (contract) => {
-        setSelectedContract(contract);
-        setShowRejectModal(true);
+    setSelectedContract(contract);
+    setShowRejectModal(true);
     };
 
     const getStatusBadge = (status) => {
-        switch(status) {
-        case 'pending':
-            return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">⏳ قيد المراجعة</span>;
-        case 'approved':
-            return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">✅ مقبول</span>;
-        case 'rejected':
-            return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">❌ مرفوض</span>;
-        case 'completed':
-            return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">🏆 مكتمل</span>;
-        default:
-            return <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">{status}</span>;
-        }
+    const badges = {
+        pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: '⏳', label: 'قيد المراجعة' },
+        approved: { bg: 'bg-green-100', text: 'text-green-800', icon: '✅', label: 'مقبول' },
+        rejected: { bg: 'bg-red-100', text: 'text-red-800', icon: '❌', label: 'مرفوض' },
+        completed: { bg: 'bg-blue-100', text: 'text-blue-800', icon: '🏆', label: 'مكتمل' }
+    };
+    
+    const badge = badges[status] || { bg: 'bg-gray-100', text: 'text-gray-800', icon: '', label: status };
+    
+    return (
+        <span className={`${badge.bg} ${badge.text} px-3 py-1 rounded-full text-sm font-medium`}>
+        {badge.icon} {badge.label}
+        </span>
+    );
     };
 
-    if (loading) {
-        return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600 text-lg">جاري التحميل...</p>
+    const getLiveStatusBadge = (isALive) => {
+    return isALive ? (
+        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">نشط</span>
+    ) : (
+        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">غير نشط</span>
+    );
+    };
+
+    const SkeletonLoader = () => (
+    <div className="min-h-screen bg-gray-100" dir="rtl">
+        <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+            <h1 className="text-3xl font-bold text-gray-900">لوحة التحكم</h1>
+            <div className="bg-gray-200 h-10 w-40 animate-pulse rounded-lg"></div>
+            </div>
+            <div className="flex space-x-8 space-x-reverse border-b">
+            {[1,2,3].map(i => (
+                <div key={i} className="pb-4 px-1">
+                <div className="h-6 w-20 bg-gray-200 animate-pulse rounded"></div>
+                </div>
+            ))}
             </div>
         </div>
-        );
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                <div className="bg-gray-200 rounded-full p-3 ml-4 w-12 h-12 animate-pulse"></div>
+                <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+                </div>
+            </div>
+            ))}
+        </div>
+        </div>
+    </div>
+    );
+
+    if (loading && initialLoad) {
+    return <SkeletonLoader />;
     }
 
     return (
@@ -213,93 +346,38 @@
                 {stats && (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-white rounded-lg shadow p-6">
+                    {statsCards.map((card, index) => (
+                    <div key={index} className="bg-white rounded-lg shadow p-6">
                         <div className="flex items-center">
-                        <div className="bg-blue-100 rounded-full p-3 ml-4">
-                            <span className="text-blue-600 text-2xl">📄</span>
+                        <div className={`bg-${card.color}-100 rounded-full p-3 ml-4`}>
+                            <span className={`text-${card.color}-600 text-2xl`}>{card.icon}</span>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">إجمالي العقود</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.totalContracts}</p>
+                            <p className="text-sm text-gray-600">{card.label}</p>
+                            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
                         </div>
                         </div>
                     </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                        <div className="bg-yellow-100 rounded-full p-3 ml-4">
-                            <span className="text-yellow-600 text-2xl">⏳</span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">قيد المراجعة</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.pendingContracts}</p>
-                        </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                        <div className="bg-green-100 rounded-full p-3 ml-4">
-                            <span className="text-green-600 text-2xl">✅</span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">مقبولة</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.approvedContracts}</p>
-                        </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                        <div className="bg-red-100 rounded-full p-3 ml-4">
-                            <span className="text-red-600 text-2xl">❌</span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">مرفوضة</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.rejectedContracts}</p>
-                        </div>
-                        </div>
-                    </div>
+                    ))}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-lg shadow p-6">
+                    {userStatsCards.map((card, index) => (
+                    <div key={index} className="bg-white rounded-lg shadow p-6">
                         <div className="flex items-center">
-                        <div className="bg-purple-100 rounded-full p-3 ml-4">
-                            <span className="text-purple-600 text-2xl">👥</span>
+                        <div className={`bg-${card.color}-100 rounded-full p-3 ml-4`}>
+                            <span className={`text-${card.color}-600 text-2xl`}>{card.icon}</span>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">إجمالي المستخدمين</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                            <p className="text-sm text-gray-600">{card.label}</p>
+                            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                            {card.percentage && (
+                            <p className="text-xs text-gray-500">{card.percentage}%</p>
+                            )}
                         </div>
                         </div>
                     </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                        <div className="bg-green-100 rounded-full p-3 ml-4">
-                            <span className="text-green-600 text-2xl">✅</span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">المستخدمين النشطين</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
-                            <p className="text-xs text-gray-500">{stats.activePercentage}%</p>
-                        </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                        <div className="bg-yellow-100 rounded-full p-3 ml-4">
-                            <span className="text-yellow-600 text-2xl">⚠️</span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">المستخدمين الغير نشطين</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.inactiveUsers}</p>
-                            <p className="text-xs text-gray-500">{stats.inactivePercentage}%</p>
-                        </div>
-                        </div>
-                    </div>
+                    ))}
                     </div>
                 </>
                 )}
@@ -339,6 +417,20 @@
                                 <span className="mr-2 font-medium">{contract.formattedArea}</span>
                                 </div>
                             </div>
+                            {contract.contractImage && (
+                                <div className="mt-2">
+                                <button
+                                    onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewImage(contract.contractImage);
+                                    }}
+                                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                >
+                                    <span>📷</span>
+                                    عرض صورة العقد
+                                </button>
+                                </div>
+                            )}
                             </div>
                             <div className="flex gap-2 mr-4">
                             <button
@@ -383,6 +475,7 @@
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">نوع العقار</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">السعر</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">صورة العقد</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">التاريخ</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">إجراءات</th>
                     </tr>
@@ -395,6 +488,18 @@
                         <td className="px-6 py-4 whitespace-nowrap">{contract.propertyType}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{contract.formattedPrice}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(contract.status)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            {contract.contractImage ? (
+                            <button
+                                onClick={() => handleViewImage(contract.contractImage)}
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                                عرض الصورة
+                            </button>
+                            ) : (
+                            <span className="text-gray-400 text-sm">لا توجد</span>
+                            )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                             {new Date(contract.createdAt).toLocaleDateString('ar-EG')}
                         </td>
@@ -428,37 +533,57 @@
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الرقم القومي</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">عدد العقود</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">آخر نشاط</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">حالة النشاط</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">حالة الحياة</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">إجراءات</th>
                     </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
+                    {users.map((user) => {
+                        return (
                         <tr key={user._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">{user.fullName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.phoneNumber}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.nationalId}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.contractCount || 0}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap font-medium">{user.fullName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{user.phoneNumber}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{user.nationalId}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{user.contractCount || 0}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                             {new Date(user.lastActivity).toLocaleDateString('ar-EG')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            {user.inactive ? (
-                            <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">غير نشط</span>
-                            ) : (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">نشط</span>
-                            )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                            onClick={() => handleDeleteUser(user._id, user.fullName)}
-                            className="text-red-600 hover:text-red-900"
-                            >
-                            حذف
-                            </button>
-                        </td>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                            {getLiveStatusBadge(user.isALive)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    className="sr-only peer"
+                                    checked={user.isALive}
+                                    onChange={() => handleToggleUserStatus(user._id, user.isALive)}
+                                    disabled={statusLoading}
+                                />
+                                <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                                    user.isALive ? 'peer-checked:bg-green-600' : 'peer-checked:bg-red-600'
+                                }`}></div>
+                                <span className="mr-3 text-sm font-medium text-gray-900">
+                                    {user.isALive ? 'نشط' : 'غير نشط'}
+                                </span>
+                                </label>
+                            </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                                <button
+                                onClick={() => handleDeleteUser(user._id, user.fullName)}
+                                className="text-red-600 hover:text-red-900 text-xs"
+                                >
+                                حذف
+                                </button>
+                            </div>
+                            </td>
                         </tr>
-                    ))}
+                        );
+                    })}
                     </tbody>
                 </table>
                 </div>
@@ -543,14 +668,20 @@
                     </div>
                 )}
 
-                {selectedContract.imageUrl && (
+                {selectedContract.contractImage && (
                     <div>
                     <p className="text-sm text-gray-500 mb-2">صورة العقد</p>
-                    <img 
-                        src={selectedContract.imageUrl} 
+                    <div 
+                        className="cursor-pointer"
+                        onClick={() => handleViewImage(selectedContract.contractImage)}
+                    >
+                        <img 
+                        src={selectedContract.contractImage} 
                         alt="Contract" 
-                        className="max-w-full h-auto rounded-lg border"
-                    />
+                        className="max-w-full h-48 object-contain rounded-lg border mx-auto hover:opacity-90 transition"
+                        />
+                        <p className="text-center text-sm text-blue-600 mt-1">اضغط للتكبير</p>
+                    </div>
                     </div>
                 )}
 
@@ -585,6 +716,27 @@
                     </button>
                 </div>
                 </div>
+            </div>
+            </div>
+        )}
+
+        {showImageModal && selectedImage && (
+            <div 
+            className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowImageModal(false)}
+            >
+            <div className="relative max-w-5xl max-h-full">
+                <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition z-10"
+                >
+                إغلاق ✕
+                </button>
+                <img 
+                src={selectedImage} 
+                alt="Contract Large" 
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                />
             </div>
             </div>
         )}
