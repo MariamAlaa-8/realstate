@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api';
 
@@ -7,6 +7,7 @@ export default function Requestrealestate() {
   const [propertyType, setPropertyType] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     nationalId: '',
@@ -25,6 +26,27 @@ export default function Requestrealestate() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await API.get('/users/profile');
+      console.log('👤 User profile:', response.data);
+      setUserProfile(response.data.user);
+      
+      setFormData(prev => ({
+        ...prev,
+        fullName: response.data.user.fullName || '',
+        nationalId: response.data.user.nationalId || '',
+        phoneNumber: response.data.user.phoneNumber || ''
+      }));
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    }
+  };
 
   const getPropertyCategory = (type) => {
     const categories = {
@@ -79,88 +101,118 @@ export default function Requestrealestate() {
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  setSuccessMessage('');
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    setError('يجب تسجيل الدخول أولاً');
-    setLoading(false);
-    navigate('/login');
-    return;
-  }
-
-  try {
-    const formDataToSend = new FormData();
-    
-    formDataToSend.append('fullName', formData.fullName);
-    formDataToSend.append('nationalId', formData.nationalId);
-    formDataToSend.append('phoneNumber', formData.phoneNumber);
-    formDataToSend.append('propertyNumber', formData.propertyNumber);
-    formDataToSend.append('ownershipPercentage', formData.ownershipPercentage);
-    formDataToSend.append('address', formData.address);
-    formDataToSend.append('governorate', formData.governorate);
-    formDataToSend.append('propertyType', formData.propertyType);
-    formDataToSend.append('area', formData.area);
-    formDataToSend.append('price', formData.price);
-    
-    const notes = `رقم عداد الكهرباء: ${formData.electricityMeter || 'غير موجود'}`;
-    formDataToSend.append('notes', notes);
-    
-    if (formData.floor) {
-      formDataToSend.append('floor', formData.floor);
+  const validateUserData = () => {
+    if (!userProfile) {
+      setError('لم يتم تحميل بيانات المستخدم');
+      return false;
     }
+
+    if (formData.fullName.trim() !== userProfile.fullName) {
+      setError('الاسم المدخل لا يتطابق مع الاسم المسجل');
+      return false;
+    }
+
+    if (formData.nationalId.trim() !== userProfile.nationalId) {
+      setError('الرقم القومي المدخل لا يتطابق مع الرقم القومي المسجل');
+      return false;
+    }
+
+    if (formData.phoneNumber.trim() !== userProfile.phoneNumber) {
+      setError('رقم الهاتف المدخل لا يتطابق مع رقم الهاتف المسجل');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    const category = getPropertyCategory(formData.propertyType);
-    if (category) {
-      formDataToSend.append('propertyCategory', category);
-    } else {
-      setError('نوع العقار غير صحيح');
-      setLoading(false);
+    if (!validateUserData()) {
       return;
     }
-    
-    if (selectedImage) {
-      formDataToSend.append('contractImage', selectedImage);
+
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('يجب تسجيل الدخول أولاً');
+      setLoading(false);
+      navigate('/login');
+      return;
     }
 
-    console.log('📦 FormData contents:');
-    for (let [key, value] of formDataToSend.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File - ${value.name} (${value.type})`);
-      } else {
-        console.log(`${key}: ${value}`);
+    try {
+      const formDataToSend = new FormData();
+      
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('nationalId', formData.nationalId);
+      formDataToSend.append('phoneNumber', formData.phoneNumber);
+      formDataToSend.append('propertyNumber', formData.propertyNumber);
+      formDataToSend.append('ownershipPercentage', formData.ownershipPercentage);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('governorate', formData.governorate);
+      formDataToSend.append('propertyType', formData.propertyType);
+      formDataToSend.append('area', formData.area);
+      formDataToSend.append('price', formData.price);
+      
+      const notes = `رقم عداد الكهرباء: ${formData.electricityMeter || 'غير موجود'}`;
+      formDataToSend.append('notes', notes);
+      
+      if (formData.floor) {
+        formDataToSend.append('floor', formData.floor);
       }
-    }
+      
+      const category = getPropertyCategory(formData.propertyType);
+      if (category) {
+        formDataToSend.append('propertyCategory', category);
+      } else {
+        setError('نوع العقار غير صحيح');
+        setLoading(false);
+        return;
+      }
+      
+      if (selectedImage) {
+        formDataToSend.append('contractImage', selectedImage);
+      }
 
-    console.log('📤 Sending data to server...');
-    
-    const response = await API.post('/contracts/create', formDataToSend);
+      console.log('📦 FormData contents:');
+      for (let [key, value] of formDataToSend.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File - ${value.name} (${value.type})`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
 
-    console.log('✅ Response:', response.data);
-    
-    setSuccessMessage('تم إرسال طلبك بنجاح. سيتم مراجعة الطلب والموافقة عليه قريباً');
-    
-    setTimeout(() => {
-  navigate('/services');
-}, 2000);
-  } catch (err) {
-    console.error('❌ Error:', err);
-    
-    if (err.response?.status === 401 || err.response?.status === 403) {
-      setError('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى');
-      localStorage.removeItem('token');
-      setTimeout(() => navigate('/login'), 2000);
-    } else {
-      setError(err.response?.data?.message || 'حدث خطأ في إرسال الطلب');
+      console.log('📤 Sending data to server...');
+      
+      const response = await API.post('/contracts/create', formDataToSend);
+
+      console.log('✅ Response:', response.data);
+      
+      setSuccessMessage('تم إرسال طلبك بنجاح. سيتم مراجعة الطلب والموافقة عليه قريباً');
+      
+      setTimeout(() => {
+        navigate('/services');
+      }, 2000);
+      
+    } catch (err) {
+      console.error('❌ Error:', err);
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setError('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى');
+        localStorage.removeItem('token');
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError(err.response?.data?.message || 'حدث خطأ في إرسال الطلب');
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const isFloorRequired = ["شقة", "دوبلكس", "ستوديو", "بنتهاوس", "مكتب إداري", "عيادة"].includes(propertyType);
 
@@ -200,6 +252,7 @@ const handleSubmit = async (e) => {
                 required
                 className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800"
               />
+              <p className="text-xs text-gray-500 mt-1">يجب أن يتطابق مع الاسم المسجل</p>
             </div>
 
             <div>
@@ -212,6 +265,7 @@ const handleSubmit = async (e) => {
                 required
                 className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800"
               />
+              <p className="text-xs text-gray-500 mt-1">يجب أن يتطابق مع الرقم القومي المسجل</p>
             </div>
 
             <div>
@@ -235,6 +289,7 @@ const handleSubmit = async (e) => {
                 required
                 className="w-full border rounded-lg py-3 px-3 outline-none focus:border-blue-800"
               />
+              <p className="text-xs text-gray-500 mt-1">يجب أن يتطابق مع رقم الهاتف المسجل</p>
             </div>
 
             <div>
